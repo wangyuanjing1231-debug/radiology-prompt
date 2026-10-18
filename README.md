@@ -4,7 +4,7 @@
 
 ## 现行
 
-- `prompt.md`：语音流报告规矩 v4.0（2026-10-19 启用，配合 Gemini 4）。用法：Gemini 网页里一个病人一个新对话，技能自动加载；回复整条复制进点选网页 baogao.html，点掉不要的句子，复制进 PACS。规矩由聊天里的 Claude 维护，YJW 上的 Antigravity 负责同步进 Gemini 技能并回读核对。
+- `prompt.md`：语音流报告规矩 v4.1（v4.0 于 2026-10-19 启用，配合 Gemini 4）。用法：Gemini 网页里一个病人一个新对话，技能自动加载；回复整条复制进点选网页 baogao.html，点掉不要的句子，复制进 PACS。规矩由聊天里的 Claude 维护，YJW 上的 Antigravity 负责同步进 Gemini 技能并回读核对。
 
 ## 旧时代（legacy/）
 
