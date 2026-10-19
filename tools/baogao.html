@@ -3,8 +3,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>报告点选</title>
 <style>
-:root{--bg:#fff;--fg:#1a1a1a;--mute:#888;--red:#c62828;--redbg:#fdecec;--line:#ccc;--btn:#f3f3f3;--inf:#1565c0;--infbg:#e8f0fb;--alt:#9a9a9a}
-@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#eee;--mute:#888;--red:#ff6b6b;--redbg:#3a1d1d;--line:#444;--btn:#222;--inf:#82b1ff;--infbg:#1a2738;--alt:#777}}
+:root{--bg:#fff;--fg:#1a1a1a;--mute:#888;--red:#c62828;--redbg:#fdecec;--line:#ccc;--btn:#f3f3f3;--inf:#1565c0;--infbg:#e8f0fb;}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#eee;--mute:#888;--red:#ff6b6b;--redbg:#3a1d1d;--line:#444;--btn:#222;--inf:#82b1ff;--infbg:#1a2738;}}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif}
 .wrap{padding:16px;max-width:900px;margin:0 auto}
 #top{display:flex;gap:8px;align-items:center}
@@ -17,9 +17,9 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:"Microsoft YaHei"
 #rep .hd{color:var(--mute);font-size:15px;padding-left:0;user-select:none;-webkit-user-select:none}
 .i{color:var(--inf);background:var(--infbg);border-radius:3px}
 .o{color:var(--red);background:var(--redbg);border-radius:3px}
-.alt{color:var(--alt);font-size:15px;margin:0 2px;cursor:pointer;user-select:none;-webkit-user-select:none}
-.alt::before{content:"〔"}.alt::after{content:"〕"}
-.alt:hover{color:var(--fg)}
+.alt{color:var(--red);opacity:.5;cursor:pointer;user-select:none;-webkit-user-select:none}
+.alt::before{content:"/"}
+.alt:hover{opacity:1}
 .del{color:var(--mute)!important;background:none!important;text-decoration:line-through}
 .o.del+.alt{display:none}
 .foot{position:sticky;bottom:0;background:var(--bg);padding:4px 0 8px}
@@ -28,7 +28,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:"Microsoft YaHei"
 #ta{position:absolute;left:-9999px}
 </style></head><body><div class="wrap">
 <div id="top"><div id="ban" style="display:none"></div></div>
-<div id="tip">Ctrl+V 粘贴报告 · 左键改字 · 右键删除/恢复 · 点灰字换成另一个</div>
+<div id="tip">Ctrl+V 粘贴报告 · 左键改字 · 右键删除/恢复 · 点红字后面的「/备选」可以互换</div>
 <div id="rep" contenteditable="true" spellcheck="false"></div>
 <div class="foot"><button id="cp">复制</button>
 <div id="msg"></div></div>
@@ -91,7 +91,9 @@ function load(raw){
       if(m.index>i)plain(t.slice(i,m.index),box);
       var c=m[1],ps=c.split('|').map(function(s){return s.trim()});
       var a=ps[0]||'',b=ps[1]||'';
-      if(c.indexOf('|')>=0&&a&&b&&a!==b){
+      var nz=ps.filter(function(s){return s});
+      if(ps.length>2){nz.forEach(function(s){if(/^[。；;，,、]+$/.test(s))box.appendChild(document.createTextNode(s));else box.appendChild(el('span','i',s))})}
+      else if(c.indexOf('|')>=0&&a&&b&&a!==b){
         box.appendChild(el('span','o',a));
         var g=el('span','alt',b);g.contentEditable='false';box.appendChild(g);
       }else if(a&&a===b){plain(a,box)}
