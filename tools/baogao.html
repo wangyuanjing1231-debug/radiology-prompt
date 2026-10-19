@@ -3,162 +3,57 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>报告点选</title>
 <style>
-:root{--bg:#fff;--fg:#1a1a1a;--mute:#888;--red:#c62828;--redbg:#fdecec;--ok:#2e7d32;--line:#ccc;--btn:#f3f3f3;--inf:#1565c0;--infbg:#e8f0fb}
-@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#eee;--mute:#888;--red:#ff6b6b;--redbg:#3a1d1d;--ok:#81c784;--line:#444;--btn:#222;--inf:#82b1ff;--infbg:#1a2738}}
+:root{--bg:#fff;--fg:#1a1a1a;--mute:#888;--red:#c62828;--redbg:#fdecec;--line:#ccc;--btn:#f3f3f3;--inf:#1565c0;--infbg:#e8f0fb;--alt:#9a9a9a}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#eee;--mute:#888;--red:#ff6b6b;--redbg:#3a1d1d;--line:#444;--btn:#222;--inf:#82b1ff;--infbg:#1a2738;--alt:#777}}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif}
 .wrap{padding:16px;max-width:900px;margin:0 auto}
-textarea#in{display:none;width:100%;box-sizing:border-box;height:100px;font-size:16px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
-.row{display:flex;gap:8px;margin:8px 0}
-.row button,#cp{flex:1;min-height:48px;font-size:17px;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--fg);cursor:pointer}
 #top{display:flex;gap:8px;align-items:center}
 #ban{flex:1;font-size:16px;padding:10px 12px;border-radius:8px;background:var(--btn)}
 #ban.new{background:#ffe082;color:#000;animation:fl .4s ease-in-out 3}
 @keyframes fl{50%{opacity:.35}}
-.foot{position:sticky;bottom:0;background:var(--bg);padding:4px 0 8px}
 #tip{font-size:14px;color:var(--mute);margin:10px 0 2px}
-#cnt{font-size:15px;color:var(--red);margin:4px 0 6px}
-#cnt.ok{color:var(--ok)}
-#rep{font-size:18px;line-height:2;white-space:pre-wrap;word-break:break-all;border-top:1px solid var(--line);padding-top:8px}
-.s,.inf{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-.s{cursor:pointer;border-radius:3px}
-.ed{outline:2px solid var(--ok);-webkit-user-select:text;user-select:text;text-decoration:none;color:var(--fg)}
-.s:hover{background:var(--btn)}
-.inf{color:var(--inf);background:var(--infbg);border-radius:3px;cursor:pointer}
-.del{color:var(--mute);background:none;text-decoration:line-through}
-.op{color:var(--red);background:var(--redbg);border-bottom:2px dashed var(--red);padding:2px 4px;border-radius:4px;cursor:pointer}
-.op.done{color:var(--fg);background:none;border-bottom:2px solid var(--ok)}
-.op.del{color:var(--mute);background:none;border-bottom:none;text-decoration:line-through}
-.op{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-#opts button{display:block;width:100%;min-height:48px;margin:6px 0;font-size:17px;text-align:left;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--fg);cursor:pointer}
-#cp{display:block;width:100%;margin-top:12px;font-weight:bold}
+#rep{font-size:18px;line-height:2;white-space:pre-wrap;word-break:break-all;border-top:1px solid var(--line);padding-top:8px;outline:none;min-height:120px}
+#rep .ln{padding-left:2em;min-height:1em}
+#rep .hd{color:var(--mute);font-size:15px;padding-left:0;user-select:none;-webkit-user-select:none}
+.i{color:var(--inf);background:var(--infbg);border-radius:3px}
+.o{color:var(--red);background:var(--redbg);border-radius:3px}
+.alt{color:var(--alt);font-size:15px;margin:0 2px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.alt::before{content:"〔"}.alt::after{content:"〕"}
+.alt:hover{color:var(--fg)}
+.del{color:var(--mute)!important;background:none!important;text-decoration:line-through}
+.o.del+.alt{display:none}
+.foot{position:sticky;bottom:0;background:var(--bg);padding:4px 0 8px}
+#cp{display:block;width:100%;min-height:48px;margin-top:12px;font-size:17px;font-weight:bold;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--fg);cursor:pointer}
 #msg{text-align:center;font-size:14px;color:var(--mute);min-height:20px;margin-top:6px}
 #ta{position:absolute;left:-9999px}
 </style></head><body><div class="wrap">
 <div id="top"><div id="ban" style="display:none"></div></div>
-<div id="cnt"></div>
-<div id="rep"></div>
-<div id="opts"></div>
+<div id="tip">Ctrl+V 粘贴报告 · 左键改字 · 右键删除/恢复 · 点灰字换成另一个</div>
+<div id="rep" contenteditable="true" spellcheck="false"></div>
 <div class="foot"><button id="cp">复制</button>
 <div id="msg"></div></div>
 <textarea id="ta"></textarea>
 </div>
 <script>
-var L=[];
 var $=function(id){return document.getElementById(id)};
-var IND=/^[\s　]*/;
-var HEAD=/^(影像描述|影像表现|描述|结论|印象)[:：]?$/;
+var HEAD=/^(影像描述|影像表现|影像所见|检查所见|所见|描述|结论|诊断意见|检查结论|诊断|印象)[:：]?$/;
+var has=false;
 
 function body(raw){
   raw=raw.replace(/\r/g,'');
   var m=raw.match(/```[^\n]*\n([\s\S]*?)```/);
   if(m)return m[1];
-  var ls=raw.split('\n'),out=[],on=false,inC=false,gotC=0;
+  var ls=raw.split('\n'),out=[],on=false;
   for(var i=0;i<ls.length;i++){
-    var l=ls[i],t=l.trim();
-    if(!on){if(HEAD.test(t)||/^★/.test(t)){on=true}else continue}
-    if(inC&&/^[▲★]/.test(t))break;
-    if(inC&&!t&&gotC)break;
-    if(inC&&t)gotC++;
-    if(/^(结论|印象)[:：]?$/.test(t))inC=true;
-    out.push(l);
+    var t=ls[i].trim();
+    if(!on){if(HEAD.test(t))on=true;else continue}
+    if(/^[▲★]/.test(t))break;
+    out.push(ls[i]);
   }
   return out.length?out.join('\n'):raw;
 }
 
-function sentences(txt,arr){
-  var re=/[^。；;，,]+[。；;，,]?|[。；;，,]/g,m;
-  while((m=re.exec(txt)))arr.push(/^[。；;，,]$/.test(m[0])?{k:'p',t:m[0]}:{k:'s',t:m[0],del:false});
-}
-
-function parse(raw){
-  L=[];
-  body(raw).split('\n').forEach(function(line){
-    var ind=line.match(IND)[0],rest=line.slice(ind.length);
-    rest=rest.replace(/^(\d+[.、．]|[（(]\d+[)）])\s*/,'');
-    var it=[];
-    if(ind)it.push({k:'f',t:ind});
-    if(!rest||HEAD.test(rest.trim())){if(rest)it.push({k:'f',t:rest});L.push(it);return}
-    var re=/\{([^{}]*)\}/g,i=0,m;
-    while((m=re.exec(rest))){
-      if(m.index>i)sentences(rest.slice(i,m.index),it);
-      var c=m[1],ps=c.split('|').map(function(s){return s.trim()}),nz=ps.filter(function(s){return s});
-      if(c.indexOf('|')>=0&&nz.length>=2)it.push({k:'o',p:ps,sel:0,done:false,del:false});
-      else it.push({k:'i',t:nz[0]||'',del:false});
-      i=re.lastIndex;
-    }
-    if(i<rest.length)sentences(rest.slice(i),it);
-    L.push(it);
-  });
-}
-
-function left(){var n=0;L.forEach(function(it){it.forEach(function(x){if(x.k==='o'&&!x.done)n++})});return n}
-
-function render(){
-  var rep=$('rep');rep.innerHTML='';
-  L.forEach(function(it,li){
-    it.forEach(function(x){
-      if(x.k==='f'||x.k==='p'){rep.appendChild(document.createTextNode(x.t));return}
-      var s=document.createElement('span');
-      if(x.k==='o'){
-        s.className='op'+(x.done?' done':'')+(x.del?' del':'');
-        s.textContent=x.p[x.sel];
-      }else{
-        s.className=(x.k==='i'?'inf':'s')+(x.del?' del':'');
-        s.textContent=x.t;
-      }
-      {
-        var tm=null,lp=false;
-        var stop=function(){if(tm){clearTimeout(tm);tm=null}};
-        s.addEventListener('pointerdown',function(){lp=false;stop();tm=setTimeout(function(){lp=true;edit(s,x)},500)});
-        s.addEventListener('pointerup',stop);s.addEventListener('pointerleave',stop);s.addEventListener('pointercancel',stop);
-        s.addEventListener('contextmenu',function(e){e.preventDefault()});
-        s.onclick=function(){if(lp||s.isContentEditable){lp=false;return}if(x.k==='o')show(x);else{x.del=!x.del;render()}};
-      }
-      rep.appendChild(s);
-    });
-    if(li<L.length-1)rep.appendChild(document.createTextNode('\n'));
-  });
-
-}
-
-function edit(s,x){
-  x.del=false;s.className='ed';s.contentEditable='true';s.focus();
-  var rg=document.createRange();rg.selectNodeContents(s);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(rg);
-  s.onblur=function(){if(x.k==='o'){x.k='s'}x.t=s.textContent;s.contentEditable='false';render()};
-}
-function show(x){
-  var o=$('opts');o.innerHTML='';
-  x.p.forEach(function(t,k){
-    var b=document.createElement('button');
-    b.textContent=(k===x.sel?'● ':'○ ')+(t===''?'（删除）':t);
-    b.onclick=function(){x.sel=k;x.done=true;x.del=false;o.innerHTML='';render()};
-    o.appendChild(b);
-  });
-  var d=document.createElement('button');
-  d.textContent=x.del?'恢复':'删掉这处';
-  d.onclick=function(){x.del=!x.del;x.done=true;o.innerHTML='';render()};
-  o.appendChild(d);
-  o.scrollIntoView({block:'nearest'});
-}
-
-function joined(){
-  var out=[];
-  L.forEach(function(it){
-    var ind='',txt='',head=false;
-    it.forEach(function(x){
-      if(x.k==='f'){if(/^[\s　]*$/.test(x.t))ind+=x.t;else{txt+=x.t;head=true}}
-      else if(x.k==='p')txt+=x.t;
-      else if(x.k==='o'){if(!x.del)txt+=x.p[x.sel]}
-      else if(!x.del)txt+=x.t;
-    });
-    txt=txt.replace(/^[，,、\s\u3000]+/,'').replace(/[，、]+(?=[。；])/g,'').replace(/([。；])[。；，、]+/g,'$1');
-    if(txt.trim())out.push((head?ind:'\u3000\u3000')+txt);
-    else if(!it.length)out.push('');
-  });
-  return out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
-}
-
-function split(t){
+function legacy(t){
   if(t.indexOf('【结论】')<0&&t.indexOf('【附见】')<0)return t;
   var D=[],C=[],F=[];
   t.split('\n').forEach(function(l){
@@ -170,20 +65,89 @@ function split(t){
     var d=l.slice(0,k).trim(),c=l.slice(k+4).replace(/^[:：\s　]+/,'').trim();
     if(d)D.push(d);if(c)C.push(c);
   });
-  var ind=function(x){return '　　'+x};
-  var out='影像描述\n'+D.map(ind).join('\n')+'\n\n结论\n'+C.map(ind).join('\n');
-  if(F.length)out+='\n'+ind('附见：'+F.join(''));
+  var out='影像描述\n'+D.join('\n')+'\n结论\n'+C.join('\n');
+  if(F.length)out+='\n附见：'+F.join('');
   return out;
 }
-function finalText(){return split(joined())}
+
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+
+function plain(txt,box){
+  var re=/[^。；;，,]+|[。；;，,]+/g,m;
+  while((m=re.exec(txt))){
+    if(/^[。；;，,]+$/.test(m[0]))box.appendChild(document.createTextNode(m[0]));
+    else box.appendChild(el('span','s',m[0]));
+  }
+}
+
+function load(raw){
+  var rep=$('rep');rep.innerHTML='';
+  legacy(body(raw)).split('\n').forEach(function(line){
+    var t=line.replace(/^[\s　]+|[\s　]+$/g,'').replace(/^(\d+[.、．]|[（(]\d+[)）])\s*/,'');
+    if(!t)return;
+    if(HEAD.test(t)){var h=el('div','ln hd',t.replace(/[:：]$/,''));h.contentEditable='false';rep.appendChild(h);return}
+    var box=el('div','ln'),re=/\{([^{}]*)\}/g,i=0,m;
+    while((m=re.exec(t))){
+      if(m.index>i)plain(t.slice(i,m.index),box);
+      var c=m[1],ps=c.split('|').map(function(s){return s.trim()});
+      var a=ps[0]||'',b=ps[1]||'';
+      if(c.indexOf('|')>=0&&a&&b&&a!==b){
+        box.appendChild(el('span','o',a));
+        var g=el('span','alt',b);g.contentEditable='false';box.appendChild(g);
+      }else if(a&&a===b){plain(a,box)}
+      else{var x=a||b;if(x)box.appendChild(el('span','i',x))}
+      i=re.lastIndex;
+    }
+    if(i<t.length)plain(t.slice(i),box);
+    rep.appendChild(box);
+  });
+  has=rep.textContent.trim().length>0;
+}
+
+function ser(n){
+  if(n.nodeType===3)return n.nodeValue;
+  if(n.nodeType!==1)return '';
+  var c=n.classList;
+  if(c.contains('alt')||c.contains('del'))return '';
+  if(c.contains('hd'))return '\n§\n';
+  if(n.tagName==='BR')return '\n';
+  var s='';for(var k=0;k<n.childNodes.length;k++)s+=ser(n.childNodes[k]);
+  if(n.tagName==='DIV'||n.tagName==='P')s='\n'+s+'\n';
+  return s;
+}
+
+function finalText(){
+  var groups=[[]];
+  ser($('rep')).split('\n').forEach(function(l){
+    l=l.replace(/ /g,' ').replace(/^[\s　]+|[\s　]+$/g,'');
+    if(l==='§'){groups.push([]);return}
+    l=l.replace(/^(\d+[.、．]|[（(]\d+[)）])\s*/,'')
+       .replace(/^[，,、；;]+/,'').replace(/[，,]{2,}/g,'，')
+       .replace(/[，、]+(?=[。；])/g,'').replace(/([。；])[。；，、]+/g,'$1');
+    if(l)groups[groups.length-1].push('　　'+l);
+  });
+  return groups.filter(function(g){return g.length}).map(function(g){return g.join('\n')}).join('\n\n');
+}
+
+$('rep').addEventListener('contextmenu',function(e){
+  var s=e.target.closest&&e.target.closest('.s,.i,.o');
+  if(!s)return;
+  e.preventDefault();s.classList.toggle('del');
+});
+$('rep').addEventListener('click',function(e){
+  var g=e.target;
+  if(!g.classList||!g.classList.contains('alt'))return;
+  var o=g.previousSibling;if(!o||!o.classList||!o.classList.contains('o'))return;
+  var a=o.textContent;o.textContent=g.textContent;g.textContent=a;
+});
 
 function oldCopy(t){var ta=$('ta');ta.value=t;ta.select();ta.setSelectionRange(0,t.length);var ok=false;try{ok=document.execCommand('copy')}catch(e){}return ok}
 function say(t){$('msg').textContent=t}
 var N=0,bt=null;
-function load(t){
-  if(!t||!t.trim())return;
-  parse(t);$('opts').innerHTML='';render();say('');N++;
-  var first='';finalText().split('\n').some(function(l){l=l.trim();if(l&&!HEAD.test(l)){first=l;return true}});
+function fresh(t){
+  load(t);say('');N++;
+  if(document.activeElement)document.activeElement.blur();
+  var first='';finalText().split('\n').some(function(l){l=l.trim();if(l){first=l;return true}});
   var b=$('ban');b.style.display='block';
   b.textContent='第 '+N+' 份　'+first.slice(0,4);
   b.className='';void b.offsetWidth;b.className='new';
@@ -191,17 +155,19 @@ function load(t){
   window.scrollTo(0,0);
 }
 document.addEventListener('paste',function(e){
-  var a=document.activeElement;
-  if(a&&a.isContentEditable)return;
   var t=(e.clipboardData||window.clipboardData).getData('text');
-  if(t){e.preventDefault();load(t)}
+  if(!t)return;
+  e.preventDefault();
+  var inRep=$('rep').contains(document.activeElement)||document.activeElement===$('rep');
+  var report=/\n/.test(t.trim())||/[{}]/.test(t)||/```/.test(t);
+  if(report||!inRep)fresh(t);
+  else document.execCommand('insertText',false,t);
 });
 
 $('cp').onclick=function(){
-  if(!L.length){say('还没有生成报告');return}
+  if(!has){say('还没有粘贴报告');return}
   var t=finalText();
-  var done=function(ok){say(ok?'已复制':'复制失败，请手动选中下面的文字复制')};
+  var done=function(ok){say(ok?'已复制':'复制失败')};
   if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(function(){done(true)},function(){done(oldCopy(t))})}else{done(oldCopy(t))}
 };
-render();
 </script></body></html>
