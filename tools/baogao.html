@@ -54,11 +54,13 @@ function body(raw){
   raw=raw.replace(/\r/g,'');
   var m=raw.match(/```[^\n]*\n([\s\S]*?)```/);
   if(m)return m[1];
-  var ls=raw.split('\n'),out=[],on=false,inC=false;
+  var ls=raw.split('\n'),out=[],on=false,inC=false,gotC=0;
   for(var i=0;i<ls.length;i++){
     var l=ls[i],t=l.trim();
     if(!on){if(HEAD.test(t)||/^★/.test(t)){on=true}else continue}
-    if(inC&&t&&!/^[\s　]/.test(l)&&!HEAD.test(t))break;
+    if(inC&&/^[▲★]/.test(t))break;
+    if(inC&&!t&&gotC)break;
+    if(inC&&t)gotC++;
     if(/^(结论|印象)[:：]?$/.test(t))inC=true;
     out.push(l);
   }
