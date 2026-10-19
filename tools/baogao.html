@@ -30,8 +30,6 @@ textarea#in{display:none;width:100%;box-sizing:border-box;height:100px;font-size
 .op.del{color:var(--mute);background:none;border-bottom:none;text-decoration:line-through}
 .op{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 #opts button{display:block;width:100%;min-height:48px;margin:6px 0;font-size:17px;text-align:left;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--fg);cursor:pointer}
-#pvt{font-size:14px;color:var(--mute);margin:16px 0 4px}
-#pv{font-size:16px;line-height:1.8;white-space:pre-wrap;word-break:break-all;border:1px dashed var(--line);border-radius:8px;padding:8px}
 #cp{display:block;width:100%;margin-top:12px;font-weight:bold}
 #msg{text-align:center;font-size:14px;color:var(--mute);min-height:20px;margin-top:6px}
 #ta{position:absolute;left:-9999px}
@@ -40,8 +38,6 @@ textarea#in{display:none;width:100%;box-sizing:border-box;height:100px;font-size
 <div id="cnt"></div>
 <div id="rep"></div>
 <div id="opts"></div>
-<div id="pvt">复制出去的是这一段：</div>
-<div id="pv"></div>
 <div class="foot"><button id="cp">复制</button>
 <div id="msg"></div></div>
 <textarea id="ta"></textarea>
@@ -122,7 +118,6 @@ function render(){
     });
     if(li<L.length-1)rep.appendChild(document.createTextNode('\n'));
   });
-  $('pv').textContent=L.length?finalText():'';
 
 }
 
