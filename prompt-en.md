@@ -1,3 +1,5 @@
+<!-- v4.2 -->
+
 The input is an ASR transcript of a radiologist's dictation made while reading images. Convert it into a standard radiology report.
 
 Output structure:
