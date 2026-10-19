@@ -27,6 +27,8 @@ textarea#in{display:none;width:100%;box-sizing:border-box;height:100px;font-size
 .del{color:var(--mute);background:none;text-decoration:line-through}
 .op{color:var(--red);background:var(--redbg);border-bottom:2px dashed var(--red);padding:2px 4px;border-radius:4px;cursor:pointer}
 .op.done{color:var(--fg);background:none;border-bottom:2px solid var(--ok)}
+.op.del{color:var(--mute);background:none;border-bottom:none;text-decoration:line-through}
+.op{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 #opts button{display:block;width:100%;min-height:48px;margin:6px 0;font-size:17px;text-align:left;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--fg);cursor:pointer}
 #pvt{font-size:14px;color:var(--mute);margin:16px 0 4px}
 #pv{font-size:16px;line-height:1.8;white-space:pre-wrap;word-break:break-all;border:1px dashed var(--line);border-radius:8px;padding:8px}
@@ -84,7 +86,7 @@ function parse(raw){
     while((m=re.exec(rest))){
       if(m.index>i)sentences(rest.slice(i,m.index),it);
       var c=m[1],ps=c.split('|').map(function(s){return s.trim()}),nz=ps.filter(function(s){return s});
-      if(c.indexOf('|')>=0&&nz.length>=2)it.push({k:'o',p:ps,sel:0,done:false});
+      if(c.indexOf('|')>=0&&nz.length>=2)it.push({k:'o',p:ps,sel:0,done:false,del:false});
       else it.push({k:'i',t:nz[0]||'',del:false});
       i=re.lastIndex;
     }
@@ -102,19 +104,19 @@ function render(){
       if(x.k==='f'||x.k==='p'){rep.appendChild(document.createTextNode(x.t));return}
       var s=document.createElement('span');
       if(x.k==='o'){
-        var v=x.p[x.sel];
-        s.className='op'+(x.done?' done':'');
-        s.textContent=v===''?'（已删）':v;
-        s.onclick=function(){show(x)};
+        s.className='op'+(x.done?' done':'')+(x.del?' del':'');
+        s.textContent=x.p[x.sel];
       }else{
         s.className=(x.k==='i'?'inf':'s')+(x.del?' del':'');
         s.textContent=x.t;
+      }
+      {
         var tm=null,lp=false;
         var stop=function(){if(tm){clearTimeout(tm);tm=null}};
         s.addEventListener('pointerdown',function(){lp=false;stop();tm=setTimeout(function(){lp=true;edit(s,x)},500)});
         s.addEventListener('pointerup',stop);s.addEventListener('pointerleave',stop);s.addEventListener('pointercancel',stop);
         s.addEventListener('contextmenu',function(e){e.preventDefault()});
-        s.onclick=function(){if(lp||s.isContentEditable){lp=false;return}x.del=!x.del;render()};
+        s.onclick=function(){if(lp||s.isContentEditable){lp=false;return}if(x.k==='o')show(x);else{x.del=!x.del;render()}};
       }
       rep.appendChild(s);
     });
@@ -127,16 +129,20 @@ function render(){
 function edit(s,x){
   x.del=false;s.className='ed';s.contentEditable='true';s.focus();
   var rg=document.createRange();rg.selectNodeContents(s);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(rg);
-  s.onblur=function(){x.t=s.textContent;s.contentEditable='false';render()};
+  s.onblur=function(){if(x.k==='o'){x.k='s'}x.t=s.textContent;s.contentEditable='false';render()};
 }
 function show(x){
   var o=$('opts');o.innerHTML='';
   x.p.forEach(function(t,k){
     var b=document.createElement('button');
     b.textContent=(k===x.sel?'● ':'○ ')+(t===''?'（删除）':t);
-    b.onclick=function(){x.sel=k;x.done=true;o.innerHTML='';render()};
+    b.onclick=function(){x.sel=k;x.done=true;x.del=false;o.innerHTML='';render()};
     o.appendChild(b);
   });
+  var d=document.createElement('button');
+  d.textContent=x.del?'恢复':'删掉这处';
+  d.onclick=function(){x.del=!x.del;x.done=true;o.innerHTML='';render()};
+  o.appendChild(d);
   o.scrollIntoView({block:'nearest'});
 }
 
@@ -147,7 +153,7 @@ function joined(){
     it.forEach(function(x){
       if(x.k==='f'){if(/^[\s　]*$/.test(x.t))ind+=x.t;else{txt+=x.t;head=true}}
       else if(x.k==='p')txt+=x.t;
-      else if(x.k==='o')txt+=x.p[x.sel];
+      else if(x.k==='o'){if(!x.del)txt+=x.p[x.sel]}
       else if(!x.del)txt+=x.t;
     });
     txt=txt.replace(/^[，,、\s\u3000]+/,'').replace(/[，、]+(?=[。；])/g,'').replace(/([。；])[。；，、]+/g,'$1');
