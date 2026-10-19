@@ -86,9 +86,15 @@ function load(raw){
     var t=line.replace(/^[\s　]+|[\s　]+$/g,'').replace(/^(\d+[.、．]|[（(]\d+[)）])\s*/,'');
     if(!t)return;
     if(HEAD.test(t)){var h=el('div','ln hd',t.replace(/[:：]$/,''));h.contentEditable='false';rep.appendChild(h);return}
-    var box=el('div','ln'),re=/\{([^{}]*)\}/g,i=0,m;
+    var box=el('div','ln'),re=/\{([^{}]*)\}|\[([^\[\]]*)\]/g,i=0,m;
     while((m=re.exec(t))){
       if(m.index>i)plain(t.slice(i,m.index),box);
+      if(m[2]!=null){
+        var q=m[2].split('|').map(function(s){return s.trim()});
+        if(q.length===2&&q[0]&&q[1]&&q[0]!==q[1]){box.appendChild(el('span','o',q[0]));var g2=el('span','alt',q[1]);g2.contentEditable='false';box.appendChild(g2)}
+        else plain(q.filter(function(s){return s})[0]||'',box);
+        i=re.lastIndex;continue;
+      }
       var c=m[1],ps=c.split('|').map(function(s){return s.trim()});
       var a=ps[0]||'',b=ps[1]||'';
       var nz=ps.filter(function(s){return s});
