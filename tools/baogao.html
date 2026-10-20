@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>报告点选 v4.4</title>
+<title>报告点选 v4.5</title>
 <style>
 :root{--bg:#fff;--fg:#1a1a1a;--mute:#888;--red:#c62828;--redbg:#fdecec;--line:#ccc;--btn:#f3f3f3;--inf:#1565c0;--infbg:#e8f0fb;}
 @media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#eee;--mute:#888;--red:#ff6b6b;--redbg:#3a1d1d;--line:#444;--btn:#222;--inf:#82b1ff;--infbg:#1a2738;}}
@@ -21,14 +21,18 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:"Microsoft YaHei"
 .ck:hover{background:var(--btn)}
 .del,.del *{color:var(--mute)!important;background:none!important;text-decoration:line-through}
 .foot{position:sticky;bottom:0;background:var(--bg);padding:4px 0 8px}
+#rp{display:flex;gap:6px;align-items:center;margin-top:8px}
+#rp input{flex:1;min-width:0;min-height:40px;font-size:16px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+#rp span{color:var(--mute)}
+#rb{min-height:40px;padding:0 14px;font-size:16px;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--fg);cursor:pointer;white-space:nowrap}
 #cp{display:block;width:100%;min-height:48px;margin-top:12px;font-size:17px;font-weight:bold;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--fg);cursor:pointer}
 #msg{text-align:center;font-size:14px;color:var(--mute);min-height:20px;margin-top:6px}
 #ta{position:absolute;left:-9999px}
 </style></head><body><div class="wrap">
 <div id="top"><div id="ban" style="display:none"></div></div>
-<div id="tip">v4.4 · Ctrl+V 粘贴报告 · 左键改字 · 右键删除/恢复</div>
+<div id="tip">v4.5 · Ctrl+V 粘贴报告 · 左键改字 · 右键删除/恢复</div>
 <div id="rep" contenteditable="true" spellcheck="false"></div>
-<div class="foot"><button id="cp">复制</button>
+<div class="foot"><div id="rp"><input id="rf" placeholder="原词（可先在报告里选中）"><span>→</span><input id="rt" placeholder="新词"><button id="rb">全部替换</button></div><button id="cp">复制</button>
 <div id="msg"></div></div>
 <textarea id="ta"></textarea>
 </div>
@@ -157,6 +161,8 @@ function fresh(t){
   window.scrollTo(0,0);
 }
 document.addEventListener('paste',function(e){
+  var ae=document.activeElement;
+  if(ae&&ae.tagName==='INPUT')return;
   var t=(e.clipboardData||window.clipboardData).getData('text');
   if(!t)return;
   e.preventDefault();
@@ -166,6 +172,39 @@ document.addEventListener('paste',function(e){
   else document.execCommand('insertText',false,t);
 });
 
+function texts(){
+  var w=document.createTreeWalker($('rep'),NodeFilter.SHOW_TEXT,null),a=[],n;
+  while((n=w.nextNode()))a.push(n);
+  return a;
+}
+function replaceAll(from,to){
+  if(!from)return 0;
+  var ns=texts(),all='',map=[];
+  ns.forEach(function(n){for(var k=0;k<n.nodeValue.length;k++)map.push([n,k]);all+=n.nodeValue});
+  var hits=[],p=0;
+  while((p=all.indexOf(from,p))>=0){hits.push(p);p+=from.length}
+  for(var h=hits.length-1;h>=0;h--){
+    var a=map[hits[h]],b=map[hits[h]+from.length-1];
+    if(a[0]===b[0]){var v=a[0].nodeValue;a[0].nodeValue=v.slice(0,a[1])+to+v.slice(b[1]+1);continue}
+    var seen=[];
+    for(var j=hits[h]+1;j<hits[h]+from.length-1;j++){var m=map[j][0];if(m!==a[0]&&m!==b[0]&&seen.indexOf(m)<0){seen.push(m);m.nodeValue=''}}
+    b[0].nodeValue=b[0].nodeValue.slice(b[1]+1);
+    a[0].nodeValue=a[0].nodeValue.slice(0,a[1])+to;
+  }
+  return hits.length;
+}
+$('rep').addEventListener('mouseup',function(){
+  var s=window.getSelection(),x=s?String(s).trim():'';
+  if(x&&x.length<=20&&x.indexOf('\n')<0)$('rf').value=x;
+});
+$('rb').onclick=function(){
+  if(!has){say('还没有粘贴报告');return}
+  var f=$('rf').value.trim(),to=$('rt').value.trim();
+  if(!f){say('先填原词');return}
+  var n=replaceAll(f,to);
+  say(n?'替换了 '+n+' 处':'没找到「'+f+'」');
+};
+$('rt').addEventListener('keydown',function(e){if(e.key==='Enter')$('rb').onclick()});
 $('cp').onclick=function(){
   if(!has){say('还没有粘贴报告');return}
   var t=finalText();
