@@ -107,9 +107,12 @@ function fill(box,t){
 
 function load(raw){
   var rep=$('rep');rep.innerHTML='';
-  legacy(body(raw)).split('\n').forEach(function(line){
+  var src=legacy(body(raw)).split('\n');
+  var noHead=!src.some(function(l){return HEAD.test(l.trim())}),cut=false,seen=false;
+  src.forEach(function(line){
     var t=line.replace(/^[\s　]+|[\s　]+$/g,'').replace(/^(\d+[.、．]|[（(]\d+[)）])\s*/,'');
-    if(!t)return;
+    if(!t){if(noHead&&seen&&!cut){cut=true;rep.appendChild(el('div','ln hd',''))}return}
+    seen=true;
     if(HEAD.test(t)){var h=el('div','ln hd',t.replace(/[:：]$/,''));h.contentEditable='false';rep.appendChild(h);return}
     var box=el('div','ln');fill(box,t);rep.appendChild(box);
   });
