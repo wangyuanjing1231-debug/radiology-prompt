@@ -1,0 +1,182 @@
+<!-- 4.2 存档：网页未清除五角星说明；红字有深浅两种、点一下互换，不好区分 -->
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>报告点选 v4.2</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--mute:#888;--red:#c62828;--redbg:#fdecec;--line:#ccc;--btn:#f3f3f3;--inf:#1565c0;--infbg:#e8f0fb;}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#eee;--mute:#888;--red:#ff6b6b;--redbg:#3a1d1d;--line:#444;--btn:#222;--inf:#82b1ff;--infbg:#1a2738;}}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif}
+.wrap{padding:16px;max-width:900px;margin:0 auto}
+#top{display:flex;gap:8px;align-items:center}
+#ban{flex:1;font-size:16px;padding:10px 12px;border-radius:8px;background:var(--btn)}
+#ban.new{background:#ffe082;color:#000;animation:fl .4s ease-in-out 3}
+@keyframes fl{50%{opacity:.35}}
+#tip{font-size:14px;color:var(--mute);margin:10px 0 2px}
+#rep{font-size:18px;line-height:2;white-space:pre-wrap;word-break:break-all;border-top:1px solid var(--line);padding-top:8px;outline:none;min-height:120px}
+#rep .ln{padding-left:2em;min-height:1em}
+#rep .hd{color:var(--mute);font-size:15px;padding-left:0;user-select:none;-webkit-user-select:none}
+.i{color:var(--inf);background:var(--infbg);border-radius:3px}
+.o{color:var(--red);background:var(--redbg);border-radius:3px}
+.alt{color:var(--red);opacity:.5;cursor:pointer;user-select:none;-webkit-user-select:none}
+.alt::before{content:"/"}
+.alt:hover{opacity:1}
+.del{color:var(--mute)!important;background:none!important;text-decoration:line-through}
+.o.del+.alt{display:none}
+.foot{position:sticky;bottom:0;background:var(--bg);padding:4px 0 8px}
+#cp{display:block;width:100%;min-height:48px;margin-top:12px;font-size:17px;font-weight:bold;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--fg);cursor:pointer}
+#msg{text-align:center;font-size:14px;color:var(--mute);min-height:20px;margin-top:6px}
+#ta{position:absolute;left:-9999px}
+</style></head><body><div class="wrap">
+<div id="top"><div id="ban" style="display:none"></div></div>
+<div id="tip">v4.2 · Ctrl+V 粘贴报告 · 左键改字 · 右键删除/恢复 · 点红字后面的「/备选」可以互换</div>
+<div id="rep" contenteditable="true" spellcheck="false"></div>
+<div class="foot"><button id="cp">复制</button>
+<div id="msg"></div></div>
+<textarea id="ta"></textarea>
+</div>
+<script>
+var $=function(id){return document.getElementById(id)};
+var HEAD=/^(影像描述|影像表现|影像所见|检查所见|所见|描述|结论|诊断意见|检查结论|诊断|印象)[:：]?$/;
+var has=false;
+
+function body(raw){
+  raw=raw.replace(/\r/g,'');
+  var m=raw.match(/```[^\n]*\n([\s\S]*?)```/);
+  if(m)return m[1];
+  var ls=raw.split('\n'),out=[],on=false;
+  for(var i=0;i<ls.length;i++){
+    var t=ls[i].trim();
+    if(!on){if(HEAD.test(t))on=true;else continue}
+    if(/^[▲★]/.test(t))break;
+    out.push(ls[i]);
+  }
+  return out.length?out.join('\n'):raw;
+}
+
+function legacy(t){
+  if(t.indexOf('【结论】')<0&&t.indexOf('【附见】')<0)return t;
+  var D=[],C=[],F=[];
+  t.split('\n').forEach(function(l){
+    l=l.replace(/^[\s　]+|[\s　]+$/g,'');
+    if(!l||HEAD.test(l))return;
+    if(l.indexOf('【附见】')===0){var f=l.slice(4).replace(/^[:：\s　]+/,'');if(f)F.push(f);return}
+    var k=l.indexOf('【结论】');
+    if(k<0){D.push(l);return}
+    var d=l.slice(0,k).trim(),c=l.slice(k+4).replace(/^[:：\s　]+/,'').trim();
+    if(d)D.push(d);if(c)C.push(c);
+  });
+  var out='影像描述\n'+D.join('\n')+'\n结论\n'+C.join('\n');
+  if(F.length)out+='\n附见：'+F.join('');
+  return out;
+}
+
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+
+function plain(txt,box){
+  var re=/[^。；;，,]+|[。；;，,]+/g,m;
+  while((m=re.exec(txt))){
+    if(/^[。；;，,]+$/.test(m[0]))box.appendChild(document.createTextNode(m[0]));
+    else box.appendChild(el('span','s',m[0]));
+  }
+}
+
+function load(raw){
+  var rep=$('rep');rep.innerHTML='';
+  legacy(body(raw)).split('\n').forEach(function(line){
+    var t=line.replace(/^[\s　]+|[\s　]+$/g,'').replace(/^(\d+[.、．]|[（(]\d+[)）])\s*/,'');
+    if(!t)return;
+    if(HEAD.test(t)){var h=el('div','ln hd',t.replace(/[:：]$/,''));h.contentEditable='false';rep.appendChild(h);return}
+    var box=el('div','ln'),re=/\{([^{}]*)\}|\[([^\[\]]*)\]/g,i=0,m;
+    while((m=re.exec(t))){
+      if(m.index>i)plain(t.slice(i,m.index),box);
+      if(m[2]!=null){
+        var q=m[2].split('|').map(function(s){return s.trim()});
+        if(q.length===2&&q[0]&&q[1]&&q[0]!==q[1]){box.appendChild(el('span','o',q[0]));var g2=el('span','alt',q[1]);g2.contentEditable='false';box.appendChild(g2)}
+        else plain(q.filter(function(s){return s})[0]||'',box);
+        i=re.lastIndex;continue;
+      }
+      var c=m[1],ps=c.split('|').map(function(s){return s.trim()});
+      var a=ps[0]||'',b=ps[1]||'';
+      var nz=ps.filter(function(s){return s});
+      if(ps.length>2){nz.forEach(function(s){if(/^[。；;，,、]+$/.test(s))box.appendChild(document.createTextNode(s));else box.appendChild(el('span','i',s))})}
+      else if(c.indexOf('|')>=0&&a&&b&&a!==b){
+        box.appendChild(el('span','o',a));
+        var g=el('span','alt',b);g.contentEditable='false';box.appendChild(g);
+      }else if(a&&a===b){plain(a,box)}
+      else{var x=a||b;if(x)box.appendChild(el('span','i',x))}
+      i=re.lastIndex;
+    }
+    if(i<t.length)plain(t.slice(i),box);
+    rep.appendChild(box);
+  });
+  has=rep.textContent.trim().length>0;
+}
+
+function ser(n){
+  if(n.nodeType===3)return n.nodeValue;
+  if(n.nodeType!==1)return '';
+  var c=n.classList;
+  if(c.contains('alt')||c.contains('del'))return '';
+  if(c.contains('hd'))return '\n§\n';
+  if(n.tagName==='BR')return '\n';
+  var s='';for(var k=0;k<n.childNodes.length;k++)s+=ser(n.childNodes[k]);
+  if(n.tagName==='DIV'||n.tagName==='P')s='\n'+s+'\n';
+  return s;
+}
+
+function finalText(){
+  var groups=[[]];
+  ser($('rep')).split('\n').forEach(function(l){
+    l=l.replace(/ /g,' ').replace(/^[\s　]+|[\s　]+$/g,'');
+    if(l==='§'){groups.push([]);return}
+    l=l.replace(/^(\d+[.、．]|[（(]\d+[)）])\s*/,'')
+       .replace(/^[，,、；;]+/,'').replace(/[，,]{2,}/g,'，')
+       .replace(/[，、]+(?=[。；])/g,'').replace(/([。；])[。；，、]+/g,'$1');
+    if(l)groups[groups.length-1].push('　　'+l);
+  });
+  return groups.filter(function(g){return g.length}).map(function(g){return g.join('\n')}).join('\n\n');
+}
+
+$('rep').addEventListener('contextmenu',function(e){
+  var s=e.target.closest&&e.target.closest('.s,.i,.o');
+  if(!s)return;
+  e.preventDefault();s.classList.toggle('del');
+});
+$('rep').addEventListener('click',function(e){
+  var g=e.target;
+  if(!g.classList||!g.classList.contains('alt'))return;
+  var o=g.previousSibling;if(!o||!o.classList||!o.classList.contains('o'))return;
+  var a=o.textContent;o.textContent=g.textContent;g.textContent=a;
+});
+
+function oldCopy(t){var ta=$('ta');ta.value=t;ta.select();ta.setSelectionRange(0,t.length);var ok=false;try{ok=document.execCommand('copy')}catch(e){}return ok}
+function say(t){$('msg').textContent=t}
+var N=0,bt=null;
+function fresh(t){
+  load(t);say('');N++;
+  if(document.activeElement)document.activeElement.blur();
+  var first='';finalText().split('\n').some(function(l){l=l.trim();if(l){first=l;return true}});
+  var b=$('ban');b.style.display='block';
+  b.textContent='第 '+N+' 份　'+first.slice(0,4);
+  b.className='';void b.offsetWidth;b.className='new';
+  if(bt)clearTimeout(bt);bt=setTimeout(function(){b.className=''},3000);
+  window.scrollTo(0,0);
+}
+document.addEventListener('paste',function(e){
+  var t=(e.clipboardData||window.clipboardData).getData('text');
+  if(!t)return;
+  e.preventDefault();
+  var inRep=$('rep').contains(document.activeElement)||document.activeElement===$('rep');
+  var report=/\n/.test(t.trim())||/[{}]/.test(t)||/```/.test(t);
+  if(report||!inRep)fresh(t);
+  else document.execCommand('insertText',false,t);
+});
+
+$('cp').onclick=function(){
+  if(!has){say('还没有粘贴报告');return}
+  var t=finalText();
+  var done=function(ok){say(ok?'已复制':'复制失败')};
+  if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(function(){done(true)},function(){done(oldCopy(t))})}else{done(oldCopy(t))}
+};
+</script></body></html>

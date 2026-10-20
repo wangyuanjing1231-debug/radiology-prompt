@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>报告点选 v4.2</title>
+<title>报告点选 v4.3</title>
 <style>
 :root{--bg:#fff;--fg:#1a1a1a;--mute:#888;--red:#c62828;--redbg:#fdecec;--line:#ccc;--btn:#f3f3f3;--inf:#1565c0;--infbg:#e8f0fb;}
 @media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#eee;--mute:#888;--red:#ff6b6b;--redbg:#3a1d1d;--line:#444;--btn:#222;--inf:#82b1ff;--infbg:#1a2738;}}
@@ -17,18 +17,16 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:"Microsoft YaHei"
 #rep .hd{color:var(--mute);font-size:15px;padding-left:0;user-select:none;-webkit-user-select:none}
 .i{color:var(--inf);background:var(--infbg);border-radius:3px}
 .o{color:var(--red);background:var(--redbg);border-radius:3px}
-.alt{color:var(--red);opacity:.5;cursor:pointer;user-select:none;-webkit-user-select:none}
-.alt::before{content:"/"}
-.alt:hover{opacity:1}
-.del{color:var(--mute)!important;background:none!important;text-decoration:line-through}
-.o.del+.alt{display:none}
+.ck{border-radius:3px}
+.ck:hover{background:var(--btn)}
+.del,.del *{color:var(--mute)!important;background:none!important;text-decoration:line-through}
 .foot{position:sticky;bottom:0;background:var(--bg);padding:4px 0 8px}
 #cp{display:block;width:100%;min-height:48px;margin-top:12px;font-size:17px;font-weight:bold;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--fg);cursor:pointer}
 #msg{text-align:center;font-size:14px;color:var(--mute);min-height:20px;margin-top:6px}
 #ta{position:absolute;left:-9999px}
 </style></head><body><div class="wrap">
 <div id="top"><div id="ban" style="display:none"></div></div>
-<div id="tip">v4.2 · Ctrl+V 粘贴报告 · 左键改字 · 右键删除/恢复 · 点红字后面的「/备选」可以互换</div>
+<div id="tip">v4.3 · Ctrl+V 粘贴报告 · 左键改字 · 右键删除/恢复</div>
 <div id="rep" contenteditable="true" spellcheck="false"></div>
 <div class="foot"><button id="cp">复制</button>
 <div id="msg"></div></div>
@@ -43,11 +41,12 @@ function body(raw){
   raw=raw.replace(/\r/g,'');
   var m=raw.match(/```[^\n]*\n([\s\S]*?)```/);
   if(m)return m[1];
+  raw=raw.split('\n').filter(function(l){return !/^\s*(\d+[.、．)）]\s*)?[▲★]/.test(l)}).join('\n');
   var ls=raw.split('\n'),out=[],on=false;
   for(var i=0;i<ls.length;i++){
     var t=ls[i].trim();
     if(!on){if(HEAD.test(t))on=true;else continue}
-    if(/^[▲★]/.test(t))break;
+    if(/^(\d+[.、．)）]\s*)?[▲★]/.test(t))break;
     out.push(ls[i]);
   }
   return out.length?out.join('\n'):raw;
@@ -72,12 +71,34 @@ function legacy(t){
 
 function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 
-function plain(txt,box){
-  var re=/[^。；;，,]+|[。；;，,]+/g,m;
-  while((m=re.exec(txt))){
-    if(/^[。；;，,]+$/.test(m[0]))box.appendChild(document.createTextNode(m[0]));
-    else box.appendChild(el('span','s',m[0]));
+function segs(t){
+  var out=[],re=/\{([^{}]*)\}|\[([^\[\]{}]*)\]/g,i=0,m;
+  var add=function(x,c){if(x)out.push({t:x,c:c})};
+  while((m=re.exec(t))){
+    add(t.slice(i,m.index),'');
+    var inner=(m[1]!=null?m[1]:m[2]).replace(/[\[\]{}]/g,''),ps=inner.split('|').map(function(s){return s.trim()}),nz=ps.filter(function(s){return s});
+    if(m[2]!=null)add(nz[0]||'','o');
+    else if(ps.length===2&&nz.length===2&&ps[0]!==ps[1])add(ps[0],'o');
+    else if(ps.length===2&&nz.length===2)add(ps[0],'');
+    else nz.forEach(function(s){add(s,'i')});
+    i=re.lastIndex;
   }
+  add(t.slice(i),'');
+  return out;
+}
+
+function fill(box,t){
+  var ch=null;
+  var flush=function(){if(ch&&ch.childNodes.length)box.appendChild(ch);ch=null};
+  segs(t).forEach(function(sg){
+    var re=/[^。；;，,]+|[。；;，,]+/g,m;
+    while((m=re.exec(sg.t))){
+      if(/^[。；;，,]+$/.test(m[0])){flush();box.appendChild(document.createTextNode(m[0]));continue}
+      if(!ch)ch=el('span','ck');
+      ch.appendChild(sg.c?el('span',sg.c,m[0]):document.createTextNode(m[0]));
+    }
+  });
+  flush();
 }
 
 function load(raw){
@@ -86,28 +107,7 @@ function load(raw){
     var t=line.replace(/^[\s　]+|[\s　]+$/g,'').replace(/^(\d+[.、．]|[（(]\d+[)）])\s*/,'');
     if(!t)return;
     if(HEAD.test(t)){var h=el('div','ln hd',t.replace(/[:：]$/,''));h.contentEditable='false';rep.appendChild(h);return}
-    var box=el('div','ln'),re=/\{([^{}]*)\}|\[([^\[\]]*)\]/g,i=0,m;
-    while((m=re.exec(t))){
-      if(m.index>i)plain(t.slice(i,m.index),box);
-      if(m[2]!=null){
-        var q=m[2].split('|').map(function(s){return s.trim()});
-        if(q.length===2&&q[0]&&q[1]&&q[0]!==q[1]){box.appendChild(el('span','o',q[0]));var g2=el('span','alt',q[1]);g2.contentEditable='false';box.appendChild(g2)}
-        else plain(q.filter(function(s){return s})[0]||'',box);
-        i=re.lastIndex;continue;
-      }
-      var c=m[1],ps=c.split('|').map(function(s){return s.trim()});
-      var a=ps[0]||'',b=ps[1]||'';
-      var nz=ps.filter(function(s){return s});
-      if(ps.length>2){nz.forEach(function(s){if(/^[。；;，,、]+$/.test(s))box.appendChild(document.createTextNode(s));else box.appendChild(el('span','i',s))})}
-      else if(c.indexOf('|')>=0&&a&&b&&a!==b){
-        box.appendChild(el('span','o',a));
-        var g=el('span','alt',b);g.contentEditable='false';box.appendChild(g);
-      }else if(a&&a===b){plain(a,box)}
-      else{var x=a||b;if(x)box.appendChild(el('span','i',x))}
-      i=re.lastIndex;
-    }
-    if(i<t.length)plain(t.slice(i),box);
-    rep.appendChild(box);
+    var box=el('div','ln');fill(box,t);rep.appendChild(box);
   });
   has=rep.textContent.trim().length>0;
 }
@@ -138,15 +138,9 @@ function finalText(){
 }
 
 $('rep').addEventListener('contextmenu',function(e){
-  var s=e.target.closest&&e.target.closest('.s,.i,.o');
-  if(!s)return;
-  e.preventDefault();s.classList.toggle('del');
-});
-$('rep').addEventListener('click',function(e){
-  var g=e.target;
-  if(!g.classList||!g.classList.contains('alt'))return;
-  var o=g.previousSibling;if(!o||!o.classList||!o.classList.contains('o'))return;
-  var a=o.textContent;o.textContent=g.textContent;g.textContent=a;
+  var c=e.target.closest&&e.target.closest('.ck');
+  if(!c)return;
+  e.preventDefault();c.classList.toggle('del');
 });
 
 function oldCopy(t){var ta=$('ta');ta.value=t;ta.select();ta.setSelectionRange(0,t.length);var ok=false;try{ok=document.execCommand('copy')}catch(e){}return ok}
