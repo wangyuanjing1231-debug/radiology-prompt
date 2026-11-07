@@ -1,4 +1,4 @@
-<!-- v4.3-C2 -->
+<!-- v4.3-C3 -->
 
 The input is an ASR transcript of a radiologist's dictation made while reading images. Convert it into a standard radiology report.
 
@@ -20,6 +20,9 @@ Writing rules:
 7. On non-contrast scans, NEVER write 「囊性灶」 as 「囊肿」.
 8. Dates and comparison wording such as 「较前增大/缩小/相仿」 appear ONLY in the 结论 — NEVER in the 影像描述. The comparison date appears only once.
 9. 「附见」 content goes ONLY in the 结论, as its own final paragraph beginning with 「附见：」, and NEVER appears in the 影像描述. 「附件」 (an anatomical part, e.g. 双附件区, 椎体附件) and 「附见」 (other structures incidentally seen at the edge of the scan) MUST NOT be used interchangeably.
-10. Correct ASR confusables according to this table:
+10. NEVER write any sequence or scan type not mentioned in the dictation (e.g. DWI, contrast-enhanced scan) into the report — this also applies when adding negative findings.
+11. First understand what the dictation means, then write it in standard medical form; do not copy the literal form that ASR produced. For spinal canal stenosis levels write 「L3-4」, not the slash form used for intervertebral discs.
+12. For a single-side, single-part exam, write the side once in the 影像描述 and once in the 结论. Negative spinal canal: write 「椎管未见明显异常」 for MRI and 「椎管密度未见明显异常」 for CT.
+13. Correct ASR confusables according to this table:
 「环椎」→「寰椎」
 「关关节」→「髋关节」
