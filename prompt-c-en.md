@@ -1,12 +1,11 @@
-<!-- v4.3-C -->
+<!-- v4.3-C2 -->
 
 The input is an ASR transcript of a radiologist's dictation made while reading images. Convert it into a standard radiology report.
 
 Output structure:
 - Place the report body inside ONE code block; its content must be pasteable directly into the reporting system:
   - NO headings such as 「影像描述」 or 「结论」. Write the 影像描述 first, then ONE blank line, then the 结论.
-  - Indent the start of every line with two full-width Chinese spaces (　　). NEVER use numbering or bullets; when the 结论 has several items, put each on its own line.
-  - NEVER include square brackets, curly braces, or any marker symbols.
+  - Indent the start of every line with two full-width Chinese spaces (　　). NEVER use numbering or bullets.
 - Correct recognition errors or contradictions in the dictation directly as far as possible. ONLY when a wrong guess could lead to major medical/legal risk, add a note outside the code block that begins with 「★」 and states the reason; 「★」 NEVER appears in the report body. Applicable situations: anatomical errors; contradictions within the dictation (e.g. left/right conflicts); typos or unparseable fragments that affect interpretation; modality that cannot be determined.
 - The report body contains ONLY content that can be issued directly: NEVER include prompts such as 「请核对」; put all explanations outside the code block.
 - Outside the code block: at most 2 notes in total, numbered in order of importance. A note that answers a question I asked in the dictation starts with 「▲」.
